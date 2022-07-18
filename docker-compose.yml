@@ -1,7 +1,9 @@
 version: '3.4'
 
 networks: 
-  auth-net: 
+  kong-net: 
+    driver: bridge
+  keycloak-net: 
     driver: bridge
 
 volumes:
@@ -10,13 +12,13 @@ volumes:
       driver: local
 
 services:
-  db:
+  kong-database:
     image: postgres:9.6
     volumes:
       - kong-datastore:/var/lib/postgresql/data
-    # networks:
-    #   - auth-net
-    network_mode: host
+    networks:
+      - kong-net
+    # network_mode: host
     ports:
       - "5432:5432"
     environment:
@@ -29,11 +31,27 @@ services:
       timeout: 30s
       retries: 3
 
+  kong-migration:
+    image: kong:oidc-acl
+    command: "kong migrations bootstrap"
+    networks:
+      - kong-net
+    restart: on-failure
+    environment:
+      KONG_PG_HOST: kong-database
+      KONG_DATABASE: postgres
+      KONG_PG_PASSWORD: kongpass
+      KONG_PASSWORD: kongpass
+    links:
+      - kong-database
+    depends_on:
+      - kong-database
+
   kong:
-    image: kong:test
+    image: kong:oidc-acl
     build: ./docker/kong
     depends_on:
-      - db
+      - kong-database
     volumes:
       - ./oidc/:/usr/local/share/lua/5.1/kong/plugins/oidc/
       - ./acl/:/usr/local/share/lua/5.1/kong/plugins/oidc-acl/
@@ -41,13 +59,14 @@ services:
       # - auth-net
     network_mode: host
     ports:
-      - "8000:8000" # Listener
-      - "8001:8001" # Admin API
-      - "8443:8443" # Listener  (SSL)
-      - "8444:8444" # Admin API (SSL)
+      - "127.0.0.1:8000:8000" # Listener
+      - "127.0.0.1:8001:8001" # Admin API
+      - "127.0.0.1:8443:8443" # Listener  (SSL)
+      - "127.0.0.1:8444:8444" # Admin API (SSL)
     environment:
       KONG_DATABASE:         postgres
-      KONG_PG_HOST:          db
+      KONG_PG_HOST:          127.0.0.1
+      # KONG_PG_HOST:          db
       KONG_PG_PORT:          5432
       KONG_PG_DATABASE:      kong
       KONG_PG_USER:          kong
@@ -60,23 +79,36 @@ services:
       KONG_ADMIN_LISTEN:     0.0.0.0:8001, 0.0.0.0:8444 ssl
       KONG_PLUGINS:          oidc,bundled,oidc-acl
   
-  postgres:
+  konga:
+    image: pantsel/konga
+    ports:
+      - 1337:1337
+    container_name: konga
+    environment:
+      - NODE_ENV=production
+
+  keycloak-database:
       image: postgres:11
       volumes:
         - postgres_data:/var/lib/postgresql/data
+      # network_mode: host
+      networks:
+        - keycloak-net
+      ports:
+        - "5433:5432"
       environment:
         POSTGRES_DB: keycloak
         POSTGRES_USER: keycloak
         POSTGRES_PASSWORD: password
-      # networks:
-      #   - auth-net
+      
   
   keycloak:
       image: quay.io/keycloak/keycloak:legacy
       network_mode: host
       environment:
         DB_VENDOR: POSTGRES
-        DB_ADDR: postgres
+        DB_ADDR: 127.0.0.1
+        DB_PORT: 5433
         DB_DATABASE: keycloak
         DB_USER: keycloak
         DB_SCHEMA: public
@@ -88,7 +120,7 @@ services:
       ports:
         - 8080:8080
       depends_on:
-        - postgres
+        - keycloak-database
       # networks:
       #   - auth-net
         

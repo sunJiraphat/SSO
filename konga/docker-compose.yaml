@@ -1,0 +1,7 @@
+konga:
+    image: pantsel/konga
+    ports:
+      - 1337:1337
+    container_name: konga
+    environment:
+      - NODE_ENV=production

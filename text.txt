@@ -50,3 +50,9 @@ function get_user_roles(user_access_token, userinfo_endpoint)
 end
 
 
+docker run --rm --network=sso_auth-net \
+  -e "KONG_DATABASE=postgres" \
+  -e "KONG_PG_HOST=db" \
+  -e "KONG_PG_PASSWORD=kongpass" \
+  -e "KONG_PASSWORD=test" \
+ kong:test kong migrations bootstrap
