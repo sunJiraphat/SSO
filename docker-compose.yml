@@ -14,9 +14,9 @@ services:
     image: postgres:9.6
     volumes:
       - kong-datastore:/var/lib/postgresql/data
-    networks:
-      - auth-net
-    # network_mode: host
+    # networks:
+    #   - auth-net
+    network_mode: host
     ports:
       - "5432:5432"
     environment:
@@ -37,9 +37,9 @@ services:
     volumes:
       - ./oidc/:/usr/local/share/lua/5.1/kong/plugins/oidc/
       - ./acl/:/usr/local/share/lua/5.1/kong/plugins/oidc-acl/
-    networks:
-      - auth-net
-    # network_mode: host
+    # networks:
+      # - auth-net
+    network_mode: host
     ports:
       - "8000:8000" # Listener
       - "8001:8001" # Admin API
@@ -60,34 +60,36 @@ services:
       KONG_ADMIN_LISTEN:     0.0.0.0:8001, 0.0.0.0:8444 ssl
       KONG_PLUGINS:          oidc,bundled,oidc-acl
   
-  # postgres:
-  #     image: postgres:11
-  #     volumes:
-  #       - postgres_data:/var/lib/postgresql/data
-  #     environment:
-  #       POSTGRES_DB: keycloak
-  #       POSTGRES_USER: keycloak
-  #       POSTGRES_PASSWORD: password
-  #     networks:
-  #       - auth-net
+  postgres:
+      image: postgres:11
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      environment:
+        POSTGRES_DB: keycloak
+        POSTGRES_USER: keycloak
+        POSTGRES_PASSWORD: password
+      # networks:
+      #   - auth-net
   
-  # keycloak:
-  #     image: quay.io/keycloak/keycloak:legacy
-  #     environment:
-  #       DB_VENDOR: POSTGRES
-  #       DB_ADDR: postgres
-  #       DB_DATABASE: keycloak
-  #       DB_USER: keycloak
-  #       DB_SCHEMA: public
-  #       DB_PASSWORD: password
-  #       KEYCLOAK_USER: admin
-  #       KEYCLOAK_PASSWORD: 1234
-  #       # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
-  #       #JDBC_PARAMS: "ssl=true"
-  #     ports:
-  #       - 8080:8080
-  #     depends_on:
-  #       - postgres
-  #     networks:
-  #       - auth-net
+  keycloak:
+      image: quay.io/keycloak/keycloak:legacy
+      network_mode: host
+      environment:
+        DB_VENDOR: POSTGRES
+        DB_ADDR: postgres
+        DB_DATABASE: keycloak
+        DB_USER: keycloak
+        DB_SCHEMA: public
+        DB_PASSWORD: password
+        KEYCLOAK_USER: admin
+        KEYCLOAK_PASSWORD: 1234
+        # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
+        #JDBC_PARAMS: "ssl=true"
+      ports:
+        - 8080:8080
+      depends_on:
+        - postgres
+      # networks:
+      #   - auth-net
         
+
