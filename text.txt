@@ -1,0 +1,52 @@
+/usr/local/share/lua/5.1/kong/plugins/oidc-acl/
+handler.lua
+local roles = table.concat(user_info["roles"],",")
+
+schema.lua
+user_access_token = { type = "string", default="x-access-token" },
+userinfo_endpoint = { type = "string", required = true }
+
+/usr/local/share/lua/5.1/kong/plugins/oidc/
+utils.lua
+function M.injectAccessToken(accessToken)
+    ngx.req.set_header("X-Access-Token", accessToken)
+end
+
+handler.lua
+if (response.access_token) then
+utils.injectAccessToken(response.access_token)
+end
+
+
+local http = require "resty.http"
+
+get_user_roles(plugin_conf.user_access_token, plugin_conf.userinfo_endpoint)
+
+function get_user_roles(user_access_token, userinfo_endpoint)
+    local httpc = http:new()
+
+    local h = ngx.req.get_headers()
+
+    for k, v in pairs(h) do
+        if string.lower(k) == string.lower(user_access_token) then
+            local user_token = ngx.decode_base64(v)
+
+            local res, err = httpc:request_uri(userinfo_endpoint, {
+                method = "POST",
+                ssl_verify = false,
+                headers = { ["Content-Type"] = "application/json",
+                    ["Authorization"] = "Bearer " .. ngx.req.get_headers()[string.lower(user_access_token)],
+                    ["cookie"] = ngx.req.get_headers()['cookie'],
+                }
+            })
+            local res_data = cjson.decode(res.body)
+            local roles = table.concat(res_data['roles'],",")
+            return mysplit(roles, ",")
+            
+        end
+    end
+
+    return {}
+end
+
+
