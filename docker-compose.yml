@@ -55,18 +55,18 @@ services:
     volumes:
       - ./oidc/:/usr/local/share/lua/5.1/kong/plugins/oidc/
       - ./acl/:/usr/local/share/lua/5.1/kong/plugins/oidc-acl/
-    # networks:
-      # - auth-net
-    network_mode: host
+    networks:
+      - kong-net
+    # network_mode: host
     ports:
-      - "127.0.0.1:8000:8000" # Listener
-      - "127.0.0.1:8001:8001" # Admin API
-      - "127.0.0.1:8443:8443" # Listener  (SSL)
-      - "127.0.0.1:8444:8444" # Admin API (SSL)
+      - "8000:8000" # Listener
+      - "8001:8001" # Admin API
+      - "8543:8443" # Listener  (SSL)
+      - "8544:8444" # Admin API (SSL)
     environment:
       KONG_DATABASE:         postgres
-      KONG_PG_HOST:          127.0.0.1
-      # KONG_PG_HOST:          db
+      #KONG_PG_HOST:          127.0.0.1
+      KONG_PG_HOST:          kong-database
       KONG_PG_PORT:          5432
       KONG_PG_DATABASE:      kong
       KONG_PG_USER:          kong
@@ -104,11 +104,11 @@ services:
   
   keycloak:
       image: quay.io/keycloak/keycloak:legacy
-      network_mode: host
+      # network_mode: host
       environment:
         DB_VENDOR: POSTGRES
-        DB_ADDR: 127.0.0.1
-        DB_PORT: 5433
+        DB_ADDR: keycloak-database
+        DB_PORT: 5432
         DB_DATABASE: keycloak
         DB_USER: keycloak
         DB_SCHEMA: public
@@ -119,9 +119,10 @@ services:
         #JDBC_PARAMS: "ssl=true"
       ports:
         - 8080:8080
+        - 8443:8443
       depends_on:
         - keycloak-database
-      # networks:
-      #   - auth-net
+      networks:
+        - keycloak-net
         
 
