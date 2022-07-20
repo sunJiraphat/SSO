@@ -62,10 +62,10 @@ function handle(oidcConfig)
         -- add user info (name, id, roles, etc) to request headers
         utils.injectUser(response.user)
       end
-    --   if (response.access_token) then
-    -- --     add access_token to request headers
-    --     utils.injectAccessToken(response.access_token)
-    --   end
+      if (response.access_token) then
+    --     add access_token to request headers
+        utils.injectAccessToken(response.access_token)
+      end
     end
   end
 end

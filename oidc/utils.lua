@@ -67,9 +67,9 @@ function M.exit(httpStatusCode, message, ngxCode)
   ngx.exit(ngxCode)
 end
 
--- function M.injectAccessToken(accessToken)
---   ngx.req.set_header("X-Access-Token", accessToken)
--- end
+function M.injectAccessToken(accessToken)
+  ngx.req.set_header("X-Access-Token", accessToken)
+end
 
 -- function M.injectUser is add user to authenticated_credential and user info to header[X-Userinfo];
 function M.injectUser(user, client_id)
