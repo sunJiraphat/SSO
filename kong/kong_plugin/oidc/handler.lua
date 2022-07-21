@@ -61,8 +61,9 @@ function handle(oidcConfig)
       if (response.user) then
         -- add user info (name, id, roles, etc) to request headers
         utils.injectUser(response.user)
+        ngx.req.set_uri_args("filter")
         -- ngx.req.get_headers()['cookie']
-        ngx.req.set_header('cookie', ngx.req.get_headers()['cookie'] .. '; ' .. 'user_info=' .. cjson.encode(response.user))
+        -- ngx.req.set_header('cookie', ngx.req.get_headers()['cookie'] .. '; ' .. 'access_token=' .. response.access_token)
         -- return kong.response.exit(403, {
         --   header = ngx.req.get_headers()['cookie'],
         --   type = type(ngx.req.get_headers()['cookie']),
