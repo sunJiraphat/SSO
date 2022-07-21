@@ -52,6 +52,7 @@ services:
     build: ./kong
     depends_on:
       - kong-database
+      - kong-migration
     volumes:
       - ./kong/kong_plugin/oidc/:/usr/local/share/lua/5.1/kong/plugins/oidc/
       - ./kong/kong_plugin/acl/:/usr/local/share/lua/5.1/kong/plugins/oidc-acl/
