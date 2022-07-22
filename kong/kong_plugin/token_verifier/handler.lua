@@ -1,6 +1,4 @@
 local Token_verifier = require("kong.plugins.base_plugin"):extend()
-local cjson = require("cjson")
-local http = require("resty.http")
 local jwt = require("resty.jwt")
 
 function Token_verifier:new()
@@ -27,22 +25,40 @@ function Token_verifier:access(plugin_conf)
           })
     end
 
-    if os.time() > jwt_obj['payload']['exp'] and false then
+    if os.time() > jwt_obj['payload']['exp'] then
         return kong.response.exit(401, {
             code = 401002,
             message = "JWT Token expired"
           })
     end
 
-    -- local httpc = http:new()
-    -- local res, err = httpc:request_uri(plugin_conf.Application_Endpoint, { method = "GET" })
+    if jwt_obj['payload']['appid'] ~= plugin_conf.Application_ID then
+        return kong.response.exit(401, {
+            code = 401001,
+            message = "Application_ID doesn't match"
+            })
+    end
+
+    if jwt_obj['payload'][plugin_conf.iss] == nil then
+        return kong.response.exit(401, {
+            code = 401001,
+            message = "JWT Token iss missing"
+            })
+    else
+        if jwt_obj['payload'][plugin_conf.iss] ~= plugin_conf.iss_value then
+            return kong.response.exit(401, {
+                code = 401001,
+                message = "JWT Token iss invalid"
+              })
+        end
+    end
+
     -- if true then
     --     return kong.response.exit(403, {
-    --         ep = plugin_conf.Application_Endpoint,
+    --         ep = jwt_obj,
+    --         iss = plugin_conf.iss,
+    --         iss_value = plugin_conf.iss_value,
     --         -- header = ngx.req.get_headers()[plugin_conf.Token_claim_name]:gsub("Bearer ", ""),
-    --         -- jwt = jwt_obj,
-    --         data = res["keys"],
-    --         err = err
     --       })
     -- end
     return
